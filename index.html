@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Transistor Multi-Dimensional Simulator</title>
+    
+    <!-- CSS Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- KaTeX CSS for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    
+    <!-- CDNs for JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    
+    <!-- KaTeX JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <header>
+            <div class="logo-section">
+                <h1>QuantumMOS Sim <span>4D V2.0</span></h1>
+            </div>
+            <div class="header-status">
+                <div class="status-badge" id="mat-badge">Material: <strong>Silicon (Si)</strong></div>
+                <div class="status-badge" id="ox-badge">Oxide: <strong>SiO2</strong></div>
+            </div>
+        </header>
+
+        <!-- Sidebar Controls -->
+        <aside class="controls-sidebar">
+            
+            <!-- Type Selector -->
+            <div class="control-group">
+                <h2>Transistor Type</h2>
+                <div class="type-toggle">
+                    <button class="type-btn active" data-type="nmos" id="btn-nmos">NMOS</button>
+                    <button class="type-btn" data-type="pmos" id="btn-pmos">PMOS</button>
+                </div>
+            </div>
+
+            <!-- Bias Voltages -->
+            <div class="control-group">
+                <h2>Electrical Bias</h2>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Gate-Source Voltage (V_gs)</span>
+                        <span class="val-bubble" id="val-vgs">1.50 V</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-vgs" min="0" max="3" step="0.05" value="1.50">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Drain-Source Voltage (V_ds)</span>
+                        <span class="val-bubble" id="val-vds">1.00 V</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-vds" min="0" max="3" step="0.05" value="1.00">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span id="lbl-vbs">Substrate Bias (V_bs)</span>
+                        <span class="val-bubble" id="val-vbs">0.00 V</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-vbs" min="-2" max="0" step="0.1" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Selection -->
+            <div class="control-group">
+                <h2>Materials Selection</h2>
+                <div class="param-row">
+                    <div class="param-label">Semiconductor Preset</div>
+                    <select id="select-material">
+                        <option value="Si" selected>Silicon (Si)</option>
+                        <option value="Ge">Germanium (Ge)</option>
+                        <option value="GaAs">Gallium Arsenide (GaAs)</option>
+                        <option value="GaN">Gallium Nitride (GaN)</option>
+                        <option value="SiC">Silicon Carbide (4H-SiC)</option>
+                    </select>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">Gate Oxide dielectric</div>
+                    <select id="select-oxide">
+                        <option value="SiO2" selected>Silicon Dioxide (SiO2)</option>
+                        <option value="HfO2">Hafnium Oxide (HfO2 - High-k)</option>
+                        <option value="Al2O3">Aluminum Oxide (Al2O3)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Geometric Dimensions -->
+            <div class="control-group">
+                <h2>Dimensions</h2>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Channel Length (L)</span>
+                        <span class="val-bubble" id="val-l">100 nm</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-l" min="10" max="1000" step="10" value="100">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Channel Width (W)</span>
+                        <span class="val-bubble" id="val-w">1.00 µm</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-w" min="0.2" max="5.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Oxide Thickness (t_ox)</span>
+                        <span class="val-bubble" id="val-tox">2.0 nm</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-tox" min="1.0" max="20.0" step="0.5" value="2.0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Physical Properties -->
+            <div class="control-group">
+                <h2>Doping &amp; Temperature</h2>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Substrate Doping (N_sub)</span>
+                        <span class="val-bubble" id="val-nsub">1.0e17 cm⁻³</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-nsub" min="15" max="18" step="0.1" value="17">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Temperature (T)</span>
+                        <span class="val-bubble" id="val-temp">300 K</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-temp" min="100" max="500" step="5" value="300">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Particle Controls -->
+            <div class="control-group">
+                <h2>Particle Physics</h2>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Carrier Particle Size</span>
+                        <span class="val-bubble" id="val-part-size">1.0x</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-part-size" min="0.5" max="3.5" step="0.1" value="1.0">
+                    </div>
+                </div>
+                <div class="param-row">
+                    <div class="param-label">
+                        <span>Simulation Speed</span>
+                        <span class="val-bubble" id="val-part-speed">1.0x</span>
+                    </div>
+                    <div class="param-input-container">
+                        <input type="range" id="input-part-speed" min="0.1" max="2.5" step="0.1" value="1.0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4th Dimension Sweep Engine -->
+            <div class="control-group">
+                <h2>4th Dimension Sweep</h2>
+                <div class="param-row">
+                    <div class="param-label">Sweep Parameter</div>
+                    <select id="select-sweep-var">
+                        <option value="T" selected>Temperature (T)</option>
+                        <option value="L">Channel Length (L)</option>
+                        <option value="Nsub">Substrate Doping (N_sub)</option>
+                        <option value="tox">Oxide Thickness (t_ox)</option>
+                    </select>
+                </div>
+                <div class="sweep-status">
+                    <span>Sweep Speed</span>
+                    <span id="sweep-val">Paused</span>
+                </div>
+                <button class="sweep-play-btn" id="btn-sweep-play">PLAY 4D SWEEP</button>
+            </div>
+
+        </aside>
+
+        <!-- Main Content Area -->
+        <main>
+            
+            <!-- Indicators HUD -->
+            <div class="hud-indicators">
+                <div class="hud-card neon-glow-cyan" id="card-id">
+                    <div class="card-label">Drain Current (I_d)</div>
+                    <div class="card-value highlight-cyan" id="hud-id">0.000 <span>mA</span></div>
+                </div>
+                <div class="hud-card" id="card-vth">
+                    <div class="card-label">Threshold Voltage (V_th)</div>
+                    <div class="card-value" id="hud-vth">0.45 <span>V</span></div>
+                </div>
+                <div class="hud-card neon-glow-orange" id="card-mueff">
+                    <div class="card-label">Effective Mobility (μ_eff)</div>
+                    <div class="card-value" id="hud-mueff">320.5 <span>cm²/Vs</span></div>
+                </div>
+                <div class="hud-card neon-glow-pink" id="card-region">
+                    <div class="card-label">Operating Region</div>
+                    <div class="card-value" id="hud-region">Linear</div>
+                </div>
+            </div>
+
+            <!-- Split Workspace layout (Visualizer always visible alongside analytics) -->
+            <div class="workspace-grid">
+                
+                <!-- Left panel: Visualizer -->
+                <div class="viz-panel-block">
+                    <div id="visualizer-container"></div>
+                    <div class="viz-overlay-controls">
+                        <button class="viz-btn active" id="btn-toggle-ions">Show Ions</button>
+                        <button class="viz-btn active" id="btn-toggle-lattice">Show Silicon Atoms</button>
+                        <button class="viz-btn active" id="btn-toggle-efields">Show Electric Fields</button>
+                    </div>
+                </div>
+
+                <!-- Right panel: Analytics columns -->
+                <div class="analytics-column">
+                    
+                    <!-- Top Right: Charts dashboards -->
+                    <div class="charts-dashboard">
+                        <div class="dashboard-tabs">
+                            <button class="tab-btn active" data-chart="out">Output (Id-Vds)</button>
+                            <button class="tab-btn" data-chart="trans">Transfer (Id-Vgs)</button>
+                            <button class="tab-btn" data-chart="bands">Energy Bands (Barrier)</button>
+                            <button class="tab-btn" data-chart="mesh">3D Surface Plot</button>
+                        </div>
+                        <div class="charts-content-viewport">
+                            <div class="chart-wrapper-box active" id="box-chart-out">
+                                <canvas id="chart-output"></canvas>
+                            </div>
+                            <div class="chart-wrapper-box" id="box-chart-trans">
+                                <canvas id="chart-transfer"></canvas>
+                                <button class="viz-btn" style="position: absolute; top: 12px; right: 12px; padding: 2px 6px; font-size: 0.7rem; z-index: 10;" id="btn-toggle-log">Log Scale: OFF</button>
+                            </div>
+                            <div class="chart-wrapper-box" id="box-chart-bands">
+                                <canvas id="chart-band"></canvas>
+                            </div>
+                            <div class="chart-wrapper-box" id="box-chart-mesh">
+                                <div id="surface-3d-div"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Right: Detailed math inspector & Assistant panel -->
+                    <div class="details-dashboard">
+                        
+                        <!-- Mathematical display -->
+                        <div class="math-section">
+                            <h3>Mathematical Solver Variables</h3>
+                            <div class="math-equation" id="math-formula">
+                                $$I_d = \frac{W}{L}\mu_{eff} C_{ox} (V_{gs}-V_{th}-\frac{V_{ds}}{2})V_{ds}$$
+                            </div>
+                            <div class="math-values-list">
+                                <div class="math-value-item">Mobility: <strong id="val-mu-num">320 cm²/Vs</strong> (\(\mu_p\) or \(\mu_n\))</div>
+                                <div class="math-value-item">Geometry ratio: <strong id="val-wl-num">10.0</strong> (\(W/L\))</div>
+                                <div class="math-value-item">Gate overdrive: <strong id="val-vod-num">1.05 V</strong> (\(V_{gs} - V_{th}\))</div>
+                                <div class="math-value-item">Oxide Capacitance: <strong id="val-cox-num">1.72 µF/cm²</strong> (\(C_{ox}\))</div>
+                                <div class="math-value-item">Critical lateral field: <strong id="val-ecrit-num">20 kV/cm</strong> (\(E_{crit}\))</div>
+                                <div class="math-value-item">Breakdown threshold: <strong id="val-vbd-num">5.2 V</strong> (\(V_{BD}\))</div>
+                            </div>
+                        </div>
+
+                        <!-- Physics Assistant -->
+                        <div class="assistant-section">
+                            <div class="assistant-header">
+                                <h3>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                    PHYSICS ASSISTANT
+                                </h3>
+                                <div class="assistant-orb"></div>
+                            </div>
+                            <div class="assistant-chat-bubble" id="assistant-bubble">
+                                Loading device profile analysis...
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <span>Designed for Advanced Transistor Physics Simulation</span>
+            <span>OS: Windows | Engine: antigravity Node/Browser</span>
+        </footer>
+
+    </div>
+
+    <!-- Load JavaScript Components -->
+    <script src="physics.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="charts.js"></script>
+    <script src="ui.js"></script>
+</body>
+</html>
